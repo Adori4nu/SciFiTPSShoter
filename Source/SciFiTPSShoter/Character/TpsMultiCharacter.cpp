@@ -7,6 +7,8 @@
 #include "Components/InputComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 ATpsMultiCharacter::ATpsMultiCharacter()
@@ -23,7 +25,21 @@ ATpsMultiCharacter::ATpsMultiCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
 
+	bUseControllerRotationYaw = false;
+	GetCharacterMovement()->bOrientRotationToMovement = true;
 
+	GetCharacterMovement()->JumpZVelocity = 700.f;
+	GetCharacterMovement()->AirControl = 0.35f;
+	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
+	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
+}
+
+void ATpsMultiCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ATpsMultiCharacter, OverlappingWeapon);
 }
 
 // Called when the game starts or when spawned
@@ -55,21 +71,15 @@ void ATpsMultiCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	{
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ATpsMultiCharacter::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ATpsMultiCharacter::Look);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+		EnhancedInputComponent->BindAction(InteractionAction, ETriggerEvent::Triggered, this, &ATpsMultiCharacter::Interact);
 	}
-	//Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-	//PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
-
-	//PlayerInputComponent->BindAxis("MoveForward", this, &ATpsMultiCharacter::MoveForward);
-	//PlayerInputComponent->BindAxis("MoveRight", this, &ATpsMultiCharacter::MoveRight);
-	//PlayerInputComponent->BindAxis("Turn", this, &ATpsMultiCharacter::Turn);
-	//PlayerInputComponent->BindAxis("LookUp", this, &ATpsMultiCharacter::LookUp);
-
 }
 
 void ATpsMultiCharacter::Move(const FInputActionValue& Value)
 {
-	FVector2D MovementVector = Value.Get<FVector2D>();
+	const FVector2D MovementVector = Value.Get<FVector2D>();
 	if (Controller)
 	{
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -86,7 +96,7 @@ void ATpsMultiCharacter::Move(const FInputActionValue& Value)
 
 void ATpsMultiCharacter::Look(const FInputActionValue& Value)
 {
-	FVector2D LookAxisVector = Value.Get<FVector2D>();
+	const FVector2D LookAxisVector = Value.Get<FVector2D>();
 
 	if (Controller)
 	{
@@ -94,3 +104,13 @@ void ATpsMultiCharacter::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
 }
+
+void ATpsMultiCharacter::Interact()
+{
+	
+}
+
+//void ATpsMultiCharacter::Jump()
+//{
+//	Super::Jump();
+//}
