@@ -12,7 +12,7 @@ AWeapon::AWeapon()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 	// For multi
-	//bReplicates = true;
+	bReplicates = true;
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	WeaponMesh->SetupAttachment(RootComponent);
@@ -25,11 +25,11 @@ AWeapon::AWeapon()
 	AreaSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AreaSphere"));
 	AreaSphere->SetupAttachment(RootComponent);
 	// For multi game server setup weapon
-	//AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	//AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	// For single
-	AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	AreaSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
+	//AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	//AreaSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
 
 	PickUpWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PickUpWidget"));
 	PickUpWidget->SetupAttachment(RootComponent);
@@ -44,14 +44,16 @@ void AWeapon::BeginPlay()
 		PickUpWidget->SetVisibility(false);
 	}
 	// For multi
-	//if (HasAuthority())
-	//{
-	//	AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	//	AreaSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
-	//	AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnSphereOverlap);
-	//}
+	if (HasAuthority())
+	{
+		AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		AreaSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
+		AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnSphereOverlap);
+		AreaSphere->OnComponentEndOverlap.AddDynamic(this, &AWeapon::OnSphereEndOverlap);
+	}
 	// For single
-	AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnSphereOverlap);
+	//AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnSphereOverlap);
+	//AreaSphere->OnComponentEndOverlap.AddDynamic(this, &AWeapon::OnSphereEndOverlap);
 }
 
 // Called every frame
@@ -70,6 +72,18 @@ void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlappedCOmponent, AActor* 
 		MultiCharacter->SetOverlappingWeapon(this);
 		// For single
 		//PickUpWidget->SetVisibility(true);
+	}
+}
+
+void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedCOmponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	ATpsMultiCharacter* MultiCharacter = Cast<ATpsMultiCharacter>(OtherActor);
+	if (MultiCharacter && PickUpWidget)
+	{
+		// For multi
+		MultiCharacter->SetOverlappingWeapon(nullptr);
+		// For single
+		//PickUpWidget->SetVisibility(false);
 	}
 }
 

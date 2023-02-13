@@ -44,7 +44,7 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
+	virtual void PostInitializeComponents() override;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -62,9 +62,16 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 		class UCameraComponent* FollowCamera;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)
 		class AWeapon* OverlappingWeapon;
 
+	UFUNCTION()
+	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
+
+	UPROPERTY(VisibleAnywhere)
+		class UCombatComponent* Combat;
+
+
 public:
-	FORCEINLINE void SetOverlappingWeapon(AWeapon* Weapon) { OverlappingWeapon = Weapon; };
+	void SetOverlappingWeapon(AWeapon* Weapon);
 };

@@ -9,6 +9,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "SciFiTPSShoter/Weapon/Weapon.h"
+#include "CharacterComponents/CombatComponent.h"
 
 // Sets default values
 ATpsMultiCharacter::ATpsMultiCharacter()
@@ -28,6 +30,9 @@ ATpsMultiCharacter::ATpsMultiCharacter()
 	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
+	Combat = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
+	Combat->SetIsReplicated(true);
+
 	GetCharacterMovement()->JumpZVelocity = 700.f;
 	GetCharacterMovement()->AirControl = 0.35f;
 	GetCharacterMovement()->MaxWalkSpeed = 500.f;
@@ -39,7 +44,16 @@ void ATpsMultiCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ATpsMultiCharacter, OverlappingWeapon);
+	DOREPLIFETIME_CONDITION(ATpsMultiCharacter, OverlappingWeapon, COND_OwnerOnly);
+}
+
+void ATpsMultiCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	if (Combat)
+	{
+		Combat->Character = this;
+	}
 }
 
 // Called when the game starts or when spawned
@@ -107,7 +121,39 @@ void ATpsMultiCharacter::Look(const FInputActionValue& Value)
 
 void ATpsMultiCharacter::Interact()
 {
-	
+	if (Combat && HasAuthority())
+	{
+		Combat->EquipWeapon(OverlappingWeapon);
+	}
+}
+
+void ATpsMultiCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
+{
+	if (OverlappingWeapon)
+	{
+		OverlappingWeapon->ShowPickupWidget(true);
+	}
+	if (LastWeapon)
+	{
+		LastWeapon->ShowPickupWidget(false);
+	}
+
+}
+
+void ATpsMultiCharacter::SetOverlappingWeapon(AWeapon* Weapon)
+{
+	if (OverlappingWeapon)
+	{
+		OverlappingWeapon->ShowPickupWidget(false);
+	}
+	OverlappingWeapon = Weapon;
+	if (IsLocallyControlled())
+	{
+		if (OverlappingWeapon)
+		{
+			OverlappingWeapon->ShowPickupWidget(true);
+		}
+	}
 }
 
 //void ATpsMultiCharacter::Jump()
