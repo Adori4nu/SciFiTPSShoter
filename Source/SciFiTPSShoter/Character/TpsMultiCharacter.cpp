@@ -121,9 +121,16 @@ void ATpsMultiCharacter::Look(const FInputActionValue& Value)
 
 void ATpsMultiCharacter::Interact()
 {
-	if (Combat && HasAuthority())
+	if (Combat)
 	{
-		Combat->EquipWeapon(OverlappingWeapon);
+		if (HasAuthority())
+		{
+			Combat->EquipWeapon(OverlappingWeapon);
+		}
+		else
+		{
+			ServerEquipButtonPressed();
+		}
 	}
 }
 
@@ -140,6 +147,14 @@ void ATpsMultiCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 
 }
 
+void ATpsMultiCharacter::ServerEquipButtonPressed_Implementation()
+{
+	if (Combat)
+	{
+		Combat->EquipWeapon(OverlappingWeapon);
+	}
+}
+
 void ATpsMultiCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
 	if (OverlappingWeapon)
@@ -154,6 +169,11 @@ void ATpsMultiCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 			OverlappingWeapon->ShowPickupWidget(true);
 		}
 	}
+}
+
+bool ATpsMultiCharacter::IsWeaponEquipped()
+{
+	return (Combat && Combat->EquippedWeapon);
 }
 
 //void ATpsMultiCharacter::Jump()

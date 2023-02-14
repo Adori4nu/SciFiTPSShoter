@@ -57,21 +57,24 @@ protected:
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
-		class USpringArmComponent* CameraBoom;
+	class USpringArmComponent* CameraBoom;
 
 	UPROPERTY(VisibleAnywhere, Category = Camera)
-		class UCameraComponent* FollowCamera;
+	class UCameraComponent* FollowCamera;
 
 	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)
-		class AWeapon* OverlappingWeapon;
+	class AWeapon* OverlappingWeapon;
 
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
 
 	UPROPERTY(VisibleAnywhere)
-		class UCombatComponent* Combat;
+	class UCombatComponent* Combat;
 
+	UFUNCTION(Server, Reliable)
+	void ServerEquipButtonPressed();
 
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon);
+	bool IsWeaponEquipped();
 };

@@ -2,6 +2,7 @@
 
 
 #include "CombatComponent.h"
+#include "Components/SphereComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "SciFiTPSShoter/Weapon/Weapon.h"
 #include "SciFiTPSShoter/Character/TpsMultiCharacter.h"
@@ -35,6 +36,13 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	// ...
 }
 
+void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UCombatComponent, EquippedWeapon);
+}
+
 void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 {
 	if (Character == nullptr || WeaponToEquip == nullptr) return;
@@ -47,6 +55,5 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 		HandSocket->AttachActor(EquippedWeapon, Character->GetMesh());
 	}
 	EquippedWeapon->SetOwner(Character);
-	EquippedWeapon->ShowPickupWidget(false);
 }
 
