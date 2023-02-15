@@ -29,4 +29,6 @@ void UMultiCharAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	bIsInAir = MultiCharacter->GetCharacterMovement()->IsFalling();
 	bIsAccelerating = MultiCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f ? true : false;
 	bWeaponEquipped = MultiCharacter->IsWeaponEquipped();
+	bIsCrouched = MultiCharacter->bIsCrouched;
+	bIsAiming = MultiCharacter->IsAiming();
 }

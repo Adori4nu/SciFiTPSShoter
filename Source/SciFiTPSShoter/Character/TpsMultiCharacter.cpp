@@ -38,6 +38,8 @@ ATpsMultiCharacter::ATpsMultiCharacter()
 	GetCharacterMovement()->MaxWalkSpeed = 500.f;
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
+
+	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 }
 
 void ATpsMultiCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -88,6 +90,9 @@ void ATpsMultiCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 		EnhancedInputComponent->BindAction(InteractionAction, ETriggerEvent::Triggered, this, &ATpsMultiCharacter::Interact);
+		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &ATpsMultiCharacter::Crouch);
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &ATpsMultiCharacter::Aim);
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &ATpsMultiCharacter::StopAim);
 	}
 }
 
@@ -119,6 +124,22 @@ void ATpsMultiCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+void ATpsMultiCharacter::Aim()
+{
+	if (Combat)
+	{
+		Combat->SetAiming(true);
+	}
+}
+
+void ATpsMultiCharacter::StopAim()
+{
+	if (Combat)
+	{
+		Combat->SetAiming(false);
+	}
+}
+
 void ATpsMultiCharacter::Interact()
 {
 	if (Combat)
@@ -131,6 +152,18 @@ void ATpsMultiCharacter::Interact()
 		{
 			ServerEquipButtonPressed();
 		}
+	}
+}
+
+void ATpsMultiCharacter::Crouch()
+{
+	if (bIsCrouched)
+	{
+		Super::UnCrouch();
+	}
+	else
+	{
+		Super::Crouch();
 	}
 }
 
@@ -174,6 +207,11 @@ void ATpsMultiCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 bool ATpsMultiCharacter::IsWeaponEquipped()
 {
 	return (Combat && Combat->EquippedWeapon);
+}
+
+bool ATpsMultiCharacter::IsAiming()
+{
+	return (Combat && Combat->bAiming);
 }
 
 //void ATpsMultiCharacter::Jump()
