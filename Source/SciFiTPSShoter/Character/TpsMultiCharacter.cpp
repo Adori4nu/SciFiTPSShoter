@@ -2,16 +2,18 @@
 
 
 #include "TpsMultiCharacter.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
+#include "CharacterComponents/CombatComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "SciFiTPSShoter/Weapon/Weapon.h"
-#include "CharacterComponents/CombatComponent.h"
+
 
 // Sets default values
 ATpsMultiCharacter::ATpsMultiCharacter()
@@ -80,6 +82,8 @@ void ATpsMultiCharacter::BeginPlay()
 void ATpsMultiCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	AimOffset(DeltaTime);
 
 }
 
@@ -168,6 +172,31 @@ void ATpsMultiCharacter::Crouch()
 	{
 		Super::Crouch();
 	}
+}
+
+void ATpsMultiCharacter::AimOffset(float DeltaTime)
+{
+	if (Combat && Combat->EquippedWeapon == nullptr) return;
+	FVector Velocity = GetVelocity();
+	Velocity.Z = 0.f;
+	float Speed = Velocity.Size();
+	bool bIsInAir = GetCharacterMovement()->IsFalling();
+
+	if (Speed == 0.f && !bIsInAir) // standing stillm not jumping
+	{
+		FRotator CurrentAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
+		FRotator DeltaAimRotation = UKismetMathLibrary::NormalizedDeltaRotator(CurrentAimRotation, StartingAimRotation);
+		AO_Yaw = DeltaAimRotation.Yaw;
+		bUseControllerRotationYaw = false;
+	}
+	if (Speed > 0.f || bIsInAir) // running, or jumping
+	{
+		StartingAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
+		AO_Yaw = 0.f;
+		bUseControllerRotationYaw = true;
+	}
+
+	AO_Pitch = GetBaseAimRotation().Pitch;
 }
 
 void ATpsMultiCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)

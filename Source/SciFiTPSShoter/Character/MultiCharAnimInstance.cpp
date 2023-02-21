@@ -46,4 +46,7 @@ void UMultiCharAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	const float Target = DeltaCharacterRotation.Yaw / DeltaTime;
 	const float Interp = FMath::FInterpTo(Lean, Target, DeltaTime, 10.f);
 	Lean = FMath::Clamp(Interp, -90.f, 90.f);
+
+	AO_Yaw = MultiCharacter->GetAO_Yaw();
+	AO_Pitch = MultiCharacter->GetAO_Pitch();
 }
