@@ -5,6 +5,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "TpsMultiCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "SciFiTPSShoter/Weapon/Weapon.h"
 
 void UMultiCharAnimInstance::NativeInitializeAnimation()
 {
@@ -30,8 +31,10 @@ void UMultiCharAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	bIsInAir = MultiCharacter->GetCharacterMovement()->IsFalling();
 	bIsAccelerating = MultiCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f ? true : false;
 	bWeaponEquipped = MultiCharacter->IsWeaponEquipped();
+	EquippedWeapon = MultiCharacter->GetEquippedWeapon();
 	bIsCrouched = MultiCharacter->bIsCrouched;
 	bIsAiming = MultiCharacter->IsAiming();
+	TurningInPlace = MultiCharacter->GetTurningInPlace();
 
 	// Offset Yaw for Strafing
 	FRotator AimRotation =  MultiCharacter->GetBaseAimRotation();
@@ -49,4 +52,15 @@ void UMultiCharAnimInstance::NativeUpdateAnimation(float DeltaTime)
 
 	AO_Yaw = MultiCharacter->GetAO_Yaw();
 	AO_Pitch = MultiCharacter->GetAO_Pitch();
+
+	if (bWeaponEquipped && EquippedWeapon && EquippedWeapon->GetWeaponMesh() && MultiCharacter->GetMesh())
+	{
+		LeftHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("LeftHandSocket"), ERelativeTransformSpace::RTS_World);
+		FRotator InRotation = FRotator(LeftHandTransform.GetRotation());
+		FVector OutPosition;
+		FRotator OutRotation;																		/*FRotator::ZeroRotator*/
+		MultiCharacter->GetMesh()->TransformToBoneSpace(FName("hand_r"), LeftHandTransform.GetLocation(), InRotation, OutPosition, OutRotation);
+		LeftHandTransform.SetLocation(OutPosition);
+		LeftHandTransform.SetRotation(FQuat(OutRotation));
+	}
 }
