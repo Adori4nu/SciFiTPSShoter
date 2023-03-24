@@ -45,8 +45,11 @@ ATpsMultiCharacter::ATpsMultiCharacter()
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	GetCharacterMovement()->RotationRate = FRotator(0.f, 0.f, 850.f);
 
 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+	NetUpdateFrequency = 66.f;
+	MinNetUpdateFrequency = 33.f;
 }
 
 void ATpsMultiCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -96,7 +99,7 @@ void ATpsMultiCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	{
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ATpsMultiCharacter::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ATpsMultiCharacter::Look);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ATpsMultiCharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 		EnhancedInputComponent->BindAction(InteractionAction, ETriggerEvent::Triggered, this, &ATpsMultiCharacter::Interact);
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &ATpsMultiCharacter::Crouch);
@@ -173,6 +176,18 @@ void ATpsMultiCharacter::Crouch()
 	else
 	{
 		Super::Crouch();
+	}
+}
+
+void ATpsMultiCharacter::Jump()
+{
+	if (bIsCrouched)
+	{
+		Super::UnCrouch();
+	}
+	else
+	{
+		Super::Jump();
 	}
 }
 
@@ -290,7 +305,3 @@ AWeapon* ATpsMultiCharacter::GetEquippedWeapon()
 	return Combat->EquippedWeapon;
 }
 
-//void ATpsMultiCharacter::Jump()
-//{
-//	Super::Jump();
-//}

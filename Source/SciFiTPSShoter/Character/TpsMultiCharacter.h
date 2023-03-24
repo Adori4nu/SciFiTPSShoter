@@ -60,7 +60,7 @@ protected:
 	void StopAim();
 	void Interact();
 	void Crouch();
-	//void Jump();
+	virtual void Jump() override;
 
 	void AimOffset(float DeltaTime);
 
