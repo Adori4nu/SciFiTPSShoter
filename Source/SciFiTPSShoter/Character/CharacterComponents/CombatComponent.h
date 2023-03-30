@@ -33,6 +33,8 @@ protected:
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
 
+	void FireButtonPressed(bool bButtonPressed);
+
 private:
 	class ATpsMultiCharacter* Character;
 
@@ -47,6 +49,8 @@ private:
 
 	UPROPERTY(EditAnyWhere)
 	float AimWalkSpeed;
+
+	bool bFireButtonPressed;
 
 public:	
 

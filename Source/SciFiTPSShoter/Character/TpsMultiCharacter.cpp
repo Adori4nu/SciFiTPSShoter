@@ -13,6 +13,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "SciFiTPSShoter/Weapon/Weapon.h"
+#include "MultiCharAnimInstance.h"
 
 
 // Sets default values
@@ -68,6 +69,20 @@ void ATpsMultiCharacter::PostInitializeComponents()
 	}
 }
 
+void ATpsMultiCharacter::PlayFireMontage(bool bAiming)
+{
+	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && FireWeaponMontage)
+	{
+		AnimInstance->Montage_Play(FireWeaponMontage);
+		FName SectionName;
+		SectionName = bAiming ? FName("RifleAim") : FName("RifleHip");
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
 // Called when the game starts or when spawned
 void ATpsMultiCharacter::BeginPlay()
 {
@@ -105,6 +120,8 @@ void ATpsMultiCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &ATpsMultiCharacter::Crouch);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &ATpsMultiCharacter::Aim);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &ATpsMultiCharacter::StopAim);
+		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Triggered, this, &ATpsMultiCharacter::Fire);
+		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Completed, this, &ATpsMultiCharacter::StopFiring);
 	}
 }
 
@@ -188,6 +205,22 @@ void ATpsMultiCharacter::Jump()
 	else
 	{
 		Super::Jump();
+	}
+}
+
+void ATpsMultiCharacter::Fire()
+{
+	if (Combat)
+	{
+		Combat->FireButtonPressed(true);
+	}
+}
+
+void ATpsMultiCharacter::StopFiring()
+{
+	if (Combat)
+	{
+		Combat->FireButtonPressed(false);
 	}
 }
 
