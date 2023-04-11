@@ -2,6 +2,8 @@
 
 
 #include "Weapon.h"
+#include "Animation/AnimationAsset.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 #include "../Character/TpsMultiCharacter.h"
@@ -123,5 +125,13 @@ void AWeapon::ShowPickupWidget(bool bShowWidget)
 	if (PickUpWidget)
 	{
 		PickUpWidget->SetVisibility(bShowWidget);
+	}
+}
+
+void AWeapon::Fire()
+{
+	if (FireAnimation)
+	{
+		WeaponMesh->PlayAnimation(FireAnimation, false);
 	}
 }

@@ -24,7 +24,8 @@ ATpsMultiCharacter::ATpsMultiCharacter()
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(GetMesh());
-	CameraBoom->TargetArmLength = 400.0f;
+	CameraBoom->TargetArmLength = 250.0f;
+	CameraBoom->SocketOffset = FVector(0.f, 70.f, 70.f);
 	CameraBoom->bUsePawnControlRotation = true;
 
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));

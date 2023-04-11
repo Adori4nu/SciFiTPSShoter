@@ -7,6 +7,7 @@
 #include "Net/UnrealNetwork.h"
 #include "CombatComponent.generated.h"
 
+#define TRACE_LENGTH 80000
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class SCIFITPSSHOTER_API UCombatComponent : public UActorComponent
@@ -34,6 +35,14 @@ protected:
 	void OnRep_EquippedWeapon();
 
 	void FireButtonPressed(bool bButtonPressed);
+
+	UFUNCTION(Server, Reliable)
+	void ServerFire();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastFire();
+
+	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
 
 private:
 	class ATpsMultiCharacter* Character;
