@@ -13,5 +13,10 @@ UCLASS()
 class SCIFITPSSHOTER_API AProjectileWeapon : public AWeapon
 {
 	GENERATED_BODY()
+public:
+	void Fire(const FVector& HitTarget) override;
 	
+private:
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AProjectile> ProjectileClass;
 };
