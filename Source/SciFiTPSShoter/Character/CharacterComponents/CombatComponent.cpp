@@ -76,7 +76,9 @@ void UCombatComponent::FireButtonPressed(bool bPressed)
 
 	if (bFireButtonPressed)
 	{
-		ServerFire();
+		FHitResult HitResult;
+		TraceUnderCrosshairs(HitResult);
+		ServerFire(HitResult.ImpactPoint);
 	}
 }
 
@@ -113,22 +115,17 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 		{
 			TraceHitResult.ImpactPoint = End;
 			HitTarget = End;
+			UE_LOG(LogTemp, Warning, TEXT("No hit result: %s"), *HitTarget.ToString());
 		}
 		else
 		{
 			HitTarget = TraceHitResult.ImpactPoint;
-			DrawDebugSphere(
-				GetWorld(),
-				TraceHitResult.ImpactPoint,
-				12.f,
-				12,
-				FColor::Magenta
-			);
+			UE_LOG(LogTemp, Warning, TEXT("%s"), *HitTarget.ToString());
 		}
 	}
 }
 
-void UCombatComponent::MulticastFire_Implementation()
+void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceTarget)
 {
 	if (EquippedWeapon == nullptr) return;
 	if (Character && bFireButtonPressed)
@@ -138,18 +135,15 @@ void UCombatComponent::MulticastFire_Implementation()
 	}
 }
 
-void UCombatComponent::ServerFire_Implementation()
+void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceTarget)
 {
-	MulticastFire();
+	MulticastFire(TraceTarget);
 }
 
 // Called every frame
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	FHitResult HitResult;
-	TraceUnderCrosshairs(HitResult);
 }
 
 
