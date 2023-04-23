@@ -2,6 +2,8 @@
 
 
 #include "BuletCasing.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
 
 // Sets default values
 ABuletCasing::ABuletCasing()
@@ -11,6 +13,11 @@ ABuletCasing::ABuletCasing()
 
 	CasingMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CasingMesh"));
 	SetRootComponent(CasingMesh);
+	CasingMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	CasingMesh->SetSimulatePhysics(true);
+	CasingMesh->SetEnableGravity(true);
+	CasingMesh->SetNotifyRigidBodyCollision(true);
+	ShellEjectionImpulseValue = 10.f;
 }
 
 // Called when the game starts or when spawned
@@ -18,5 +25,18 @@ void ABuletCasing::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	CasingMesh->AddImpulse(GetActorForwardVector() * ShellEjectionImpulseValue);
+	CasingMesh->OnComponentHit.AddDynamic(this, &ABuletCasing::OnHit);
+}
+
+void ABuletCasing::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (ShellSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, ShellSound, GetActorLocation());
+	}
+	GetWorldTimerManager().SetTimer(DestroyTimerHandle, [this] { Destroy(); }, 5.f, false);
+	
+	CasingMesh->SetNotifyRigidBodyCollision(false);
 }
 
