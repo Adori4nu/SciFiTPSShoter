@@ -3,10 +3,12 @@
 
 #include "Weapon.h"
 #include "Animation/AnimationAsset.h"
+#include "BuletCasing.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 #include "../Character/TpsMultiCharacter.h"
+#include "Engine/SkeletalMeshSocket.h"
 #include "Net/UnrealNetwork.h"
 
 // Sets default values
@@ -133,5 +135,23 @@ void AWeapon::Fire(const FVector& HitTarget)
 	if (FireAnimation)
 	{
 		WeaponMesh->PlayAnimation(FireAnimation, false);
+	}
+	if (BuletCasingClass)
+	{
+		const USkeletalMeshSocket* BuletSocket = WeaponMesh->GetSocketByName(FName("BuletSocket"));
+		if (BuletSocket)
+		{
+			FTransform SocketTransform = BuletSocket->GetSocketTransform(WeaponMesh);
+			
+			UWorld* World = GetWorld();
+			if (World)
+			{
+				World->SpawnActor<ABuletCasing>(
+					BuletCasingClass,
+					SocketTransform.GetLocation(),
+					SocketTransform.GetRotation().Rotator()
+					);
+			}
+		}
 	}
 }
