@@ -18,6 +18,11 @@ ABuletCasing::ABuletCasing()
 	CasingMesh->SetEnableGravity(true);
 	CasingMesh->SetNotifyRigidBodyCollision(true);
 	ShellEjectionImpulseValue = 10.f;
+
+	MinCoolTime = 1.f;
+	MaxCoolTime = 5.f;
+	CoolTime = FMath::RandRange(MinCoolTime, MaxCoolTime);
+	CoolRate = 0.5f;
 }
 
 // Called when the game starts or when spawned
@@ -27,6 +32,15 @@ void ABuletCasing::BeginPlay()
 	
 	CasingMesh->AddImpulse(GetActorForwardVector() * ShellEjectionImpulseValue);
 	CasingMesh->OnComponentHit.AddDynamic(this, &ABuletCasing::OnHit);
+
+	DynamicMaterialInstance = CasingMesh->CreateDynamicMaterialInstance(0);
+	if (DynamicMaterialInstance)
+	{
+		GetWorldTimerManager().SetTimer(CoolTimerHandle, this, &ABuletCasing::Cool, CoolRate, true);
+
+		EmissivePower = DynamicMaterialInstance->K2_GetScalarParameterValue(FName("Emissive_Strength"));
+		EmissivePowerDelta = (EmissivePower / CoolTime) * CoolRate;
+	}
 }
 
 void ABuletCasing::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -38,5 +52,18 @@ void ABuletCasing::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrim
 	GetWorldTimerManager().SetTimer(DestroyTimerHandle, [this] { Destroy(); }, 5.f, false);
 	
 	CasingMesh->SetNotifyRigidBodyCollision(false);
+}
+
+void ABuletCasing::Cool()
+{
+	if (DynamicMaterialInstance == nullptr) { return; }
+
+	EmissivePower -= EmissivePowerDelta;
+	DynamicMaterialInstance->SetScalarParameterValue(FName("Emissive_Strength"), EmissivePower);
+
+	if (EmissivePower <= 0.f)
+	{
+		GetWorldTimerManager().ClearTimer(CoolTimerHandle);
+	}
 }
 

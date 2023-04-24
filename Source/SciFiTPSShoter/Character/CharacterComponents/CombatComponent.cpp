@@ -115,12 +115,12 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 		{
 			TraceHitResult.ImpactPoint = End;
 			HitTarget = End;
-			UE_LOG(LogTemp, Warning, TEXT("No hit result: %s"), *HitTarget.ToString());
+			//UE_LOG(LogTemp, Warning, TEXT("No hit result: %s"), *HitTarget.ToString());
 		}
 		else
 		{
 			HitTarget = TraceHitResult.ImpactPoint;
-			UE_LOG(LogTemp, Warning, TEXT("%s"), *HitTarget.ToString());
+			//UE_LOG(LogTemp, Warning, TEXT("%s"), *HitTarget.ToString());
 		}
 	}
 }

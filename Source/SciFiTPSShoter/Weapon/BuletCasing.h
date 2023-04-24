@@ -32,4 +32,23 @@ private:
 	class USoundCue* ShellSound;
 
 	FTimerHandle DestroyTimerHandle;
+
+	UPROPERTY(EditAnywhere)
+	float MinCoolTime;
+
+	UPROPERTY(EditAnywhere)
+	float MaxCoolTime;
+
+	UFUNCTION()
+	void Cool();
+
+	UMaterialInstanceDynamic* DynamicMaterialInstance;
+
+	float CoolTime;
+	float EmissivePower;
+	float EmissivePowerDelta;
+	float CoolRate;
+
+	FTimerHandle CoolTimerHandle;
+
 };
