@@ -36,10 +36,10 @@ void ABuletCasing::BeginPlay()
 	DynamicMaterialInstance = CasingMesh->CreateDynamicMaterialInstance(0);
 	if (DynamicMaterialInstance)
 	{
-		GetWorldTimerManager().SetTimer(CoolTimerHandle, this, &ABuletCasing::Cool, CoolRate, true);
-
-		EmissivePower = DynamicMaterialInstance->K2_GetScalarParameterValue(FName("Emissive_Strength"));
+		EmissivePower = DynamicMaterialInstance->K2_GetScalarParameterValue(FName("EmissiveStrength"));
 		EmissivePowerDelta = (EmissivePower / CoolTime) * CoolRate;
+
+		GetWorldTimerManager().SetTimer(CoolTimerHandle, this, &ABuletCasing::Cool, CoolRate, true);
 	}
 }
 
@@ -59,7 +59,7 @@ void ABuletCasing::Cool()
 	if (DynamicMaterialInstance == nullptr) { return; }
 
 	EmissivePower -= EmissivePowerDelta;
-	DynamicMaterialInstance->SetScalarParameterValue(FName("Emissive_Strength"), EmissivePower);
+	DynamicMaterialInstance->SetScalarParameterValue(FName("EmissiveStrength"), EmissivePower);
 
 	if (EmissivePower <= 0.f)
 	{
