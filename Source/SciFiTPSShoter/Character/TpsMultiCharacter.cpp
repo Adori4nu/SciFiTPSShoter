@@ -339,3 +339,9 @@ AWeapon* ATpsMultiCharacter::GetEquippedWeapon()
 	return Combat->EquippedWeapon;
 }
 
+FVector ATpsMultiCharacter::GetHitTarget() const
+{
+	if (Combat == nullptr) return FVector();
+	return Combat->HitTarget;
+}
+

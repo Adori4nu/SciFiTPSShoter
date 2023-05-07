@@ -75,6 +75,8 @@ public:
 	void SetWeaponState(EWeaponState State);
 	FORCEINLINE	USphereComponent* GetAreaSphere() const { return AreaSphere; }
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
+	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; }
+	FORCEINLINE float GetZoomInterpSpeed() const { return ZoomInterpSpeed; }
 
 	/**
 	* Weapon croshair textures
@@ -94,4 +96,16 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = Crosshairs)
 	UTexture2D* CrosshairsBotom;
+
+	/**
+	* Zoomed FOV while aming
+	*/
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	float ZoomedFOV = 30.f;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	float ZoomInterpSpeed = 20.f;
+
+
 };
