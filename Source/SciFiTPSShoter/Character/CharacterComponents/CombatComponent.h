@@ -5,9 +5,11 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "SciFiTPSShoter/HUD/TPSCharacterHUD.h"
 #include "CombatComponent.generated.h"
 
 #define TRACE_LENGTH 80000
+#define BASE_CROSSHAIR_SPREAD 0.5f
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class SCIFITPSSHOTER_API UCombatComponent : public UActorComponent
@@ -70,8 +72,11 @@ private:
 	* HUD and Crosshairs
 	*/
 
+	FHUDPackage HUDPackage;
 	float CrosshairVelocityFactor;
 	float CrosshairInAirFactor;
+	float CrosshairAimFactor;
+	float CrosshairShootingFactor;
 	
 	FVector HitTarget;
 	

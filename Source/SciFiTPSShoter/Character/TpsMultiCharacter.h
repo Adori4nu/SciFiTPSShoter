@@ -5,11 +5,12 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
+#include "SciFiTPSShoter/Interfaces/InteractWithCrosshairsInterface.h"
 #include "SciFiTPSShoter/ShoterTypes/TurningInPlace.h"
 #include "TpsMultiCharacter.generated.h"
 
 UCLASS()
-class SCIFITPSSHOTER_API ATpsMultiCharacter : public ACharacter
+class SCIFITPSSHOTER_API ATpsMultiCharacter : public ACharacter, public IInteractWithCrosshairsInterface
 {
 	GENERATED_BODY()
 
@@ -97,6 +98,11 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	class UAnimMontage* FireWeaponMontage;
+
+	void HideCameraIfCharacterClose();
+
+	UPROPERTY(EditAnywhere, Category = Camera)
+	float CameraTreshold = 100.f;
 	
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon);

@@ -11,7 +11,6 @@
 #include "SciFiTPSShoter/Weapon/Weapon.h"
 #include "SciFiTPSShoter/Character/TpsMultiCharacter.h"
 #include "SciFiTPSShoter/PlayerController/TPSPlayerController.h"
-#include "SciFiTPSShoter/HUD/TPSCharacterHUD.h"
 
 // Sets default values for this component's properties
 UCombatComponent::UCombatComponent()
@@ -104,6 +103,11 @@ void UCombatComponent::FireButtonPressed(bool bPressed)
 		FHitResult HitResult;
 		TraceUnderCrosshairs(HitResult);
 		ServerFire(HitResult.ImpactPoint);
+
+		if (EquippedWeapon)
+		{
+			CrosshairShootingFactor = FMath::Clamp(CrosshairShootingFactor + 1.2f, 0.0f, 4.0f);
+		}
 	}
 }
 
@@ -116,19 +120,26 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 	}
 
 	FVector2D CrosshairLocation(ViewportSize.X / 2.f, ViewportSize.Y / 2.f);
-	FVector CroshairWorldPosition;
-	FVector CroshairWorldDirection;
+	FVector CrosshairWorldPosition;
+	FVector CrosshairWorldDirection;
 	bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld(
 		UGameplayStatics::GetPlayerController(this, 0),
 		CrosshairLocation,
-		CroshairWorldPosition,
-		CroshairWorldDirection
+		CrosshairWorldPosition,
+		CrosshairWorldDirection
 	);
 
 	if (bScreenToWorld)
 	{
-		FVector Start = CroshairWorldPosition;
-		FVector End = Start + CroshairWorldDirection * TRACE_LENGTH;
+		FVector Start = CrosshairWorldPosition;
+
+		if (Character)
+		{
+			float DistanceToCharacter = (Character->GetActorLocation() - Start).Size();
+			Start += CrosshairWorldDirection * (DistanceToCharacter + 50.f);
+		}
+
+		FVector End = Start + CrosshairWorldDirection * TRACE_LENGTH;
 
 		GetWorld()->LineTraceSingleByChannel(
 			TraceHitResult,
@@ -136,16 +147,13 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 			End,
 			ECollisionChannel::ECC_Visibility
 		);
-		if (!TraceHitResult.bBlockingHit)
+		if (TraceHitResult.GetActor() && TraceHitResult.GetActor()->Implements<UInteractWithCrosshairsInterface>())
 		{
-			TraceHitResult.ImpactPoint = End;
-			HitTarget = End;
-			//UE_LOG(LogTemp, Warning, TEXT("No hit result: %s"), *HitTarget.ToString());
+			HUDPackage.CrosshairsColor = FLinearColor::MakeFromColorTemperature(2700.f);
 		}
 		else
 		{
-			HitTarget = TraceHitResult.ImpactPoint;
-			//UE_LOG(LogTemp, Warning, TEXT("%s"), *HitTarget.ToString());
+			HUDPackage.CrosshairsColor = FLinearColor::Gray;
 		}
 	}
 }
@@ -160,7 +168,6 @@ void UCombatComponent::SetHUDCrosshairs(float DeltaTime)
 		HUD = HUD == nullptr ? Cast<ATPSCharacterHUD>(Controller->GetHUD()) : HUD;
 		if (HUD)
 		{
-			FHUDPackage HUDPackage;
 			if (EquippedWeapon)
 			{
 				HUDPackage.CrosshairsCenter = EquippedWeapon->CrosshairsCenter;
@@ -194,7 +201,23 @@ void UCombatComponent::SetHUDCrosshairs(float DeltaTime)
 				CrosshairInAirFactor = FMath::FInterpTo(CrosshairInAirFactor, 0.f, DeltaTime, 5.f);
 			}
 
-			HUDPackage.CrosshairSpread = CrosshairVelocityFactor + CrosshairInAirFactor;
+			if (bAiming)
+			{
+				CrosshairAimFactor = FMath::FInterpTo(CrosshairAimFactor, 0.5f, DeltaTime, 30.f);
+			}
+			else
+			{
+				CrosshairAimFactor = FMath::FInterpTo(CrosshairAimFactor, 0.f, DeltaTime, 30.f);
+			}
+
+			CrosshairShootingFactor = FMath::FInterpTo(CrosshairShootingFactor, 0.f, DeltaTime, 5.f);
+
+			HUDPackage.CrosshairSpread = 
+				BASE_CROSSHAIR_SPREAD +
+				CrosshairVelocityFactor + 
+				CrosshairInAirFactor -
+				CrosshairAimFactor +
+				CrosshairShootingFactor;
 
 			HUD->SetHUDPackage(HUDPackage);
 		}

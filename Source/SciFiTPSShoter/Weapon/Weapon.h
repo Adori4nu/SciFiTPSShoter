@@ -102,7 +102,7 @@ public:
 	*/
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
-	float ZoomedFOV = 30.f;
+	float ZoomedFOV = 45.f;
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	float ZoomInterpSpeed = 20.f;
