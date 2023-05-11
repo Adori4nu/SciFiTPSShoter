@@ -35,6 +35,7 @@ void UMultiCharAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	bIsCrouched = MultiCharacter->bIsCrouched;
 	bIsAiming = MultiCharacter->IsAiming();
 	TurningInPlace = MultiCharacter->GetTurningInPlace();
+	bRotateRootBone = MultiCharacter->ShouldRotateRootBone();
 
 	// Offset Yaw for Strafing
 	FRotator AimRotation =  MultiCharacter->GetBaseAimRotation();
