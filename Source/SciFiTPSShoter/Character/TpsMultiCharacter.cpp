@@ -12,6 +12,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
+#include "SciFiTPSShoter/PlayerController/TPSPlayerController.h"
 #include "SciFiTPSShoter/SciFiTPSShoter.h"
 #include "SciFiTPSShoter/Weapon/Weapon.h"
 #include "MultiCharAnimInstance.h"
@@ -67,6 +68,7 @@ void ATpsMultiCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME_CONDITION(ATpsMultiCharacter, OverlappingWeapon, COND_OwnerOnly);
+	DOREPLIFETIME(ATpsMultiCharacter, Health);
 }
 
 void ATpsMultiCharacter::PostInitializeComponents()
@@ -128,6 +130,10 @@ void ATpsMultiCharacter::BeginPlay()
 		{
 			Subsystem->AddMappingContext(TpsCharacterContext, 0);
 		}
+	}
+	if (TPSPlayerController = Cast<ATPSPlayerController>(GetController()); TPSPlayerController)
+	{
+		TPSPlayerController->SetHUDHealth(Health, MaxHealth);
 	}
 }
 
@@ -429,6 +435,7 @@ void ATpsMultiCharacter::HideCameraIfCharacterClose()
 
 void ATpsMultiCharacter::OnRep_Health()
 {
+
 }
 
 void ATpsMultiCharacter::SetOverlappingWeapon(AWeapon* Weapon)

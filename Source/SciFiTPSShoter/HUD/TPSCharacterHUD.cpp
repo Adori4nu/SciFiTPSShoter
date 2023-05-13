@@ -2,6 +2,25 @@
 
 
 #include "TPSCharacterHUD.h"
+#include "GameFramework/PlayerController.h"
+#include "CharacterOverlay.h"
+
+void ATPSCharacterHUD::BeginPlay()
+{
+	Super::BeginPlay();
+
+	AddCharacterOverlay();
+}
+
+void ATPSCharacterHUD::AddCharacterOverlay()
+{
+	APlayerController* PlayerController = GetOwningPlayerController();
+	if (PlayerController && CharcterOverlayClass)
+	{
+		CharacterOverlay = CreateWidget<UCharacterOverlay>(PlayerController, CharcterOverlayClass);
+		CharacterOverlay->AddToViewport();
+	}
+}
 
 void ATPSCharacterHUD::DrawHUD()
 {

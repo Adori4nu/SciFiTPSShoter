@@ -29,6 +29,15 @@ class SCIFITPSSHOTER_API ATPSCharacterHUD : public AHUD
 	GENERATED_BODY()
 public:
 	virtual void DrawHUD() override;
+
+	UPROPERTY(EditAnywhere, Category = "Player Stats")
+	TSubclassOf<class UUserWidget> CharcterOverlayClass;
+
+	class UCharacterOverlay* CharacterOverlay;
+protected:
+	virtual void BeginPlay() override;
+	void AddCharacterOverlay();
+
 private:
 	FHUDPackage HUDPackage;
 
