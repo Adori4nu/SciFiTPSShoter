@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/ProgressBar.h"
+#include "Components/TextBlock.h"
 #include "CharacterOverlay.generated.h"
 
 /**
@@ -16,8 +18,8 @@ class SCIFITPSSHOTER_API UCharacterOverlay : public UUserWidget
 	
 public:
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	class UProgressBar* HealthBar;
+	UProgressBar* HealthBar;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	class UTextBlock* HealthText;
+	UTextBlock* HealthText;
 };

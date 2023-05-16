@@ -12,6 +12,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
+#include "SciFiTPSShoter/GameMode/TPSCoOpGameMode.h"
 #include "SciFiTPSShoter/PlayerController/TPSPlayerController.h"
 #include "SciFiTPSShoter/SciFiTPSShoter.h"
 #include "SciFiTPSShoter/Weapon/Weapon.h"
@@ -94,6 +95,11 @@ void ATpsMultiCharacter::PlayFireMontage(bool bAiming)
 	}
 }
 
+void ATpsMultiCharacter::PlayElimMontage()
+{
+
+}
+
 void ATpsMultiCharacter::PlayHitReactMontage()
 {
 	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
@@ -107,6 +113,24 @@ void ATpsMultiCharacter::PlayHitReactMontage()
 	}
 }
 
+void ATpsMultiCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
+{
+	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
+	UpdateHUDHealth();
+	PlayHitReactMontage();
+
+	if (Health == 0.f)
+	{
+		ATPSCoOpGameMode* CoOpGameMode = GetWorld()->GetAuthGameMode<ATPSCoOpGameMode>();
+		if (CoOpGameMode)
+		{
+			TPSPlayerController = TPSPlayerController == nullptr ? Cast<ATPSPlayerController>(Controller) : TPSPlayerController;
+			ATPSPlayerController* AttackerController = Cast<ATPSPlayerController>(InstigatorController);
+			CoOpGameMode->PlayerEliminated(this, TPSPlayerController, AttackerController);
+		}
+	}
+}
+
 void ATpsMultiCharacter::OnRep_ReplicatedMovement()
 {
 	Super::OnRep_ReplicatedMovement();
@@ -116,6 +140,11 @@ void ATpsMultiCharacter::OnRep_ReplicatedMovement()
 		SimProxiesTurn();
 	}
 	TimeSinceLastMovementReplication = 0.f;
+}
+
+void ATpsMultiCharacter::Elim()
+{
+
 }
 
 // Called when the game starts or when spawned
@@ -131,9 +160,10 @@ void ATpsMultiCharacter::BeginPlay()
 			Subsystem->AddMappingContext(TpsCharacterContext, 0);
 		}
 	}
-	if (TPSPlayerController = Cast<ATPSPlayerController>(GetController()); TPSPlayerController)
+	UpdateHUDHealth();
+	if (HasAuthority())
 	{
-		TPSPlayerController->SetHUDHealth(Health, MaxHealth);
+		OnTakeAnyDamage.AddDynamic(this, &ATpsMultiCharacter::ReceiveDamage);
 	}
 }
 
@@ -407,11 +437,6 @@ void ATpsMultiCharacter::ServerEquipButtonPressed_Implementation()
 	}
 }
 
-void ATpsMultiCharacter::MulticastHit_Implementation()
-{
-	PlayHitReactMontage();
-}
-
 void ATpsMultiCharacter::HideCameraIfCharacterClose()
 {
 	if (!IsLocallyControlled()) return;
@@ -435,7 +460,17 @@ void ATpsMultiCharacter::HideCameraIfCharacterClose()
 
 void ATpsMultiCharacter::OnRep_Health()
 {
+	UpdateHUDHealth();
+	PlayHitReactMontage();
+}
 
+void ATpsMultiCharacter::UpdateHUDHealth()
+{
+	TPSPlayerController = TPSPlayerController == nullptr ? Cast<ATPSPlayerController>(GetController()) : TPSPlayerController;
+	if (TPSPlayerController)
+	{
+		TPSPlayerController->SetHUDHealth(Health, MaxHealth);
+	}
 }
 
 void ATpsMultiCharacter::SetOverlappingWeapon(AWeapon* Weapon)

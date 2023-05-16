@@ -4,9 +4,6 @@
 #include "TPSPlayerController.h"
 #include "SciFiTPSShoter/HUD/TPSCharacterHUD.h"
 #include "SciFiTPSShoter/HUD/CharacterOverlay.h"
-#include "Components/ProgressBar.h"
-#include "Components/TextBlock.h"
-
 
 void ATPSPlayerController::BeginPlay()
 {

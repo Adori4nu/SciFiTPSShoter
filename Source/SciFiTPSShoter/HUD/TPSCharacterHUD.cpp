@@ -19,6 +19,7 @@ void ATPSCharacterHUD::AddCharacterOverlay()
 	{
 		CharacterOverlay = CreateWidget<UCharacterOverlay>(PlayerController, CharcterOverlayClass);
 		CharacterOverlay->AddToViewport();
+		UE_LOG(LogTemp, Warning, TEXT("DUPA"));
 	}
 }
 
