@@ -97,7 +97,11 @@ void ATpsMultiCharacter::PlayFireMontage(bool bAiming)
 
 void ATpsMultiCharacter::PlayElimMontage()
 {
-
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && ElimMontage)
+	{
+		AnimInstance->Montage_Play(ElimMontage);
+	}
 }
 
 void ATpsMultiCharacter::PlayHitReactMontage()
@@ -142,9 +146,10 @@ void ATpsMultiCharacter::OnRep_ReplicatedMovement()
 	TimeSinceLastMovementReplication = 0.f;
 }
 
-void ATpsMultiCharacter::Elim()
+void ATpsMultiCharacter::Elim_Implementation()
 {
-
+	bEliminated = true;
+	PlayElimMontage();
 }
 
 // Called when the game starts or when spawned

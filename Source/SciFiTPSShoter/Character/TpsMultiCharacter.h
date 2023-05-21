@@ -54,6 +54,8 @@ public:
 	void PlayElimMontage();
 
 	virtual void OnRep_ReplicatedMovement() override;
+
+	UFUNCTION(NetMulticast, Reliable)
 	void Elim();
 protected:
 	// Called when the game starts or when spawned
@@ -143,6 +145,8 @@ private:
 
 	class ATPSPlayerController* TPSPlayerController;
 
+	bool bEliminated = false;
+
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon);
 	bool IsWeaponEquipped();
@@ -154,4 +158,5 @@ public:
 	FVector GetHitTarget() const;
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
+	FORCEINLINE bool IsElimmed() const { return bEliminated; }
 };
