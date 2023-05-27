@@ -140,6 +140,7 @@ void UMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
 
 			if (APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController(); PlayerController)
 			{
+				MenuTearDown();
 				PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
 			}
 		}

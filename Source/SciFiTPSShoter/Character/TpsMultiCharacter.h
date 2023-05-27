@@ -6,11 +6,12 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "SciFiTPSShoter/Interfaces/InteractWithCrosshairsInterface.h"
+#include "SciFiTPSShoter/Interfaces/IDmgObtainedParticlesInterface.h"
 #include "SciFiTPSShoter/ShoterTypes/TurningInPlace.h"
 #include "TpsMultiCharacter.generated.h"
 
 UCLASS()
-class SCIFITPSSHOTER_API ATpsMultiCharacter : public ACharacter, public IInteractWithCrosshairsInterface
+class SCIFITPSSHOTER_API ATpsMultiCharacter : public ACharacter, public IIDmgObtainedParticlesInterface, public IInteractWithCrosshairsInterface
 {
 	GENERATED_BODY()
 
@@ -55,8 +56,14 @@ public:
 
 	virtual void OnRep_ReplicatedMovement() override;
 
-	UFUNCTION(NetMulticast, Reliable)
 	void Elim();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastElim();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastHit();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -88,6 +95,9 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	class UCameraComponent* FollowCamera;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class UWidgetComponent* OverheadWidget;
+
 	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)
 	class AWeapon* OverlappingWeapon;
 
@@ -95,7 +105,7 @@ private:
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
 
 	UPROPERTY(VisibleAnywhere)
-	class UCombatComponent* Combat;
+	class UCombatComponent* CombatComp;
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquipButtonPressed();
@@ -147,6 +157,15 @@ private:
 
 	bool bEliminated = false;
 
+	FTimerHandle ElimTimer;
+
+	float ElimDelay();
+
+	void ElimTimerFinished();
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UParticleSystem* HitParticles;
+
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon);
 	bool IsWeaponEquipped();
@@ -159,4 +178,8 @@ public:
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
 	FORCEINLINE bool IsElimmed() const { return bEliminated; }
+	FORCEINLINE UParticleSystem* GetHitParticleSystem() { return HitParticles; };
+	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE void SetHealth(float Amount) { Health = Amount; }
+	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 };

@@ -6,12 +6,15 @@
 #include "CharacterComponents/CombatComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/WidgetComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
+#include "Particles/ParticleSystemComponent.h"
 #include "SciFiTPSShoter/GameMode/TPSCoOpGameMode.h"
 #include "SciFiTPSShoter/PlayerController/TPSPlayerController.h"
 #include "SciFiTPSShoter/SciFiTPSShoter.h"
@@ -24,6 +27,7 @@ ATpsMultiCharacter::ATpsMultiCharacter()
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	bReplicates = true;
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -43,8 +47,11 @@ ATpsMultiCharacter::ATpsMultiCharacter()
 	bUseControllerRotationRoll = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
-	Combat = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
-	Combat->SetIsReplicated(true);
+	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
+	OverheadWidget->SetupAttachment(RootComponent);
+
+	CombatComp = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
+	CombatComp->SetIsReplicated(true);
 
 	GetCharacterMovement()->JumpZVelocity = 700.f;
 	GetCharacterMovement()->AirControl = 0.35f;
@@ -60,8 +67,8 @@ ATpsMultiCharacter::ATpsMultiCharacter()
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 0.f, 850.f);
 
 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
-	NetUpdateFrequency = 66.f;
-	MinNetUpdateFrequency = 33.f;
+	NetUpdateFrequency = 120.f;
+	MinNetUpdateFrequency = 60.f;
 }
 
 void ATpsMultiCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -75,15 +82,15 @@ void ATpsMultiCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 void ATpsMultiCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-	if (Combat)
+	if (CombatComp)
 	{
-		Combat->Character = this;
+		CombatComp->Character = this;
 	}
 }
 
 void ATpsMultiCharacter::PlayFireMontage(bool bAiming)
 {
-	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+	if (CombatComp == nullptr || CombatComp->EquippedWeapon == nullptr) return;
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && FireWeaponMontage)
@@ -106,10 +113,10 @@ void ATpsMultiCharacter::PlayElimMontage()
 
 void ATpsMultiCharacter::PlayHitReactMontage()
 {
-	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+	if (CombatComp == nullptr || CombatComp->EquippedWeapon == nullptr) return;
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance && HitReactMontage)
+	if (AnimInstance && HitReactMontage && !bEliminated)
 	{
 		AnimInstance->Montage_Play(HitReactMontage);
 		FName SectionName("FromFront");
@@ -146,10 +153,20 @@ void ATpsMultiCharacter::OnRep_ReplicatedMovement()
 	TimeSinceLastMovementReplication = 0.f;
 }
 
-void ATpsMultiCharacter::Elim_Implementation()
+void ATpsMultiCharacter::Elim()
+{
+	MulticastElim();
+}
+
+void ATpsMultiCharacter::MulticastElim_Implementation()
 {
 	bEliminated = true;
 	PlayElimMontage();
+}
+
+void ATpsMultiCharacter::MulticastHit_Implementation()
+{
+	PlayHitReactMontage();
 }
 
 // Called when the game starts or when spawned
@@ -157,6 +174,11 @@ void ATpsMultiCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	UpdateHUDHealth();
+	if (HasAuthority())
+	{
+		OnTakeAnyDamage.AddDynamic(this, &ATpsMultiCharacter::ReceiveDamage);
+	}
 	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::
@@ -164,11 +186,6 @@ void ATpsMultiCharacter::BeginPlay()
 		{
 			Subsystem->AddMappingContext(TpsCharacterContext, 0);
 		}
-	}
-	UpdateHUDHealth();
-	if (HasAuthority())
-	{
-		OnTakeAnyDamage.AddDynamic(this, &ATpsMultiCharacter::ReceiveDamage);
 	}
 }
 
@@ -243,27 +260,27 @@ void ATpsMultiCharacter::Look(const FInputActionValue& Value)
 
 void ATpsMultiCharacter::Aim()
 {
-	if (Combat)
+	if (CombatComp)
 	{
-		Combat->SetAiming(true);
+		CombatComp->SetAiming(true);
 	}
 }
 
 void ATpsMultiCharacter::StopAim()
 {
-	if (Combat)
+	if (CombatComp)
 	{
-		Combat->SetAiming(false);
+		CombatComp->SetAiming(false);
 	}
 }
 
 void ATpsMultiCharacter::Interact()
 {
-	if (Combat)
+	if (CombatComp)
 	{
 		if (HasAuthority())
 		{
-			Combat->EquipWeapon(OverlappingWeapon);
+			CombatComp->EquipWeapon(OverlappingWeapon);
 		}
 		else
 		{
@@ -298,23 +315,23 @@ void ATpsMultiCharacter::Jump()
 
 void ATpsMultiCharacter::Fire()
 {
-	if (Combat)
+	if (CombatComp)
 	{
-		Combat->FireButtonPressed(true);
+		CombatComp->FireButtonPressed(true);
 	}
 }
 
 void ATpsMultiCharacter::StopFiring()
 {
-	if (Combat)
+	if (CombatComp)
 	{
-		Combat->FireButtonPressed(false);
+		CombatComp->FireButtonPressed(false);
 	}
 }
 
 void ATpsMultiCharacter::SimProxiesTurn()
 {
-	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+	if (CombatComp == nullptr || CombatComp->EquippedWeapon == nullptr) return;
 	
 	bRotateRootBone = false;
 
@@ -357,7 +374,7 @@ float ATpsMultiCharacter::CalculateSpeed()
 
 void ATpsMultiCharacter::AimOffset(float DeltaTime)
 {
-	if (Combat && Combat->EquippedWeapon == nullptr) return;
+	if (CombatComp && CombatComp->EquippedWeapon == nullptr) return;
 	float Speed = CalculateSpeed();
 	bool bIsInAir = GetCharacterMovement()->IsFalling();
 
@@ -436,9 +453,9 @@ void ATpsMultiCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 
 void ATpsMultiCharacter::ServerEquipButtonPressed_Implementation()
 {
-	if (Combat)
+	if (CombatComp)
 	{
-		Combat->EquipWeapon(OverlappingWeapon);
+		CombatComp->EquipWeapon(OverlappingWeapon);
 	}
 }
 
@@ -448,18 +465,27 @@ void ATpsMultiCharacter::HideCameraIfCharacterClose()
 	if ((FollowCamera->GetComponentLocation() - GetActorLocation()).Size() < CameraTreshold)
 	{
 		GetMesh()->SetVisibility(false);
-		if (Combat && Combat->EquippedWeapon && Combat->EquippedWeapon->GetWeaponMesh())
+		if (CombatComp && CombatComp->EquippedWeapon && CombatComp->EquippedWeapon->GetWeaponMesh())
 		{
-			Combat->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = true;
+			CombatComp->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = true;
 		}
 	}
 	else
 	{
 		GetMesh()->SetVisibility(true);
-		if (Combat && Combat->EquippedWeapon && Combat->EquippedWeapon->GetWeaponMesh())
+		if (CombatComp && CombatComp->EquippedWeapon && CombatComp->EquippedWeapon->GetWeaponMesh())
 		{
-			Combat->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = false;
+			CombatComp->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = false;
 		}
+	}
+}
+
+void ATpsMultiCharacter::UpdateHUDHealth()
+{
+	TPSPlayerController = TPSPlayerController == nullptr ? Cast<ATPSPlayerController>(Controller) : TPSPlayerController;
+	if (TPSPlayerController)
+	{
+		TPSPlayerController->SetHUDHealth(Health, MaxHealth);
 	}
 }
 
@@ -467,15 +493,6 @@ void ATpsMultiCharacter::OnRep_Health()
 {
 	UpdateHUDHealth();
 	PlayHitReactMontage();
-}
-
-void ATpsMultiCharacter::UpdateHUDHealth()
-{
-	TPSPlayerController = TPSPlayerController == nullptr ? Cast<ATPSPlayerController>(GetController()) : TPSPlayerController;
-	if (TPSPlayerController)
-	{
-		TPSPlayerController->SetHUDHealth(Health, MaxHealth);
-	}
 }
 
 void ATpsMultiCharacter::SetOverlappingWeapon(AWeapon* Weapon)
@@ -496,23 +513,23 @@ void ATpsMultiCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 
 bool ATpsMultiCharacter::IsWeaponEquipped()
 {
-	return (Combat && Combat->EquippedWeapon);
+	return (CombatComp && CombatComp->EquippedWeapon);
 }
 
 bool ATpsMultiCharacter::IsAiming()
 {
-	return (Combat && Combat->bAiming);
+	return (CombatComp && CombatComp->bAiming);
 }
 
 AWeapon* ATpsMultiCharacter::GetEquippedWeapon()
 {
-	if (Combat == nullptr) return nullptr;
-	return Combat->EquippedWeapon;
+	if (CombatComp == nullptr) return nullptr;
+	return CombatComp->EquippedWeapon;
 }
 
 FVector ATpsMultiCharacter::GetHitTarget() const
 {
-	if (Combat == nullptr) return FVector();
-	return Combat->HitTarget;
+	if (CombatComp == nullptr) return FVector();
+	return CombatComp->HitTarget;
 }
 

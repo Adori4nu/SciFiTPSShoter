@@ -28,6 +28,8 @@ AProjectile::AProjectile()
 
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
 	ProjectileMovementComponent->bRotationFollowsVelocity = true;
+
+	DefaultParticles = ImpactParticles;
 }
 
 // Called when the game starts or when spawned
@@ -46,7 +48,6 @@ void AProjectile::BeginPlay()
 			EAttachLocation::KeepWorldPosition
 		);
 	}
-
 	if (HasAuthority())
 	{
 		CollisionBox->OnComponentHit.AddDynamic(this, &AProjectile::OnHit);
@@ -55,27 +56,48 @@ void AProjectile::BeginPlay()
 
 void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	Destroy();
+	MulticastOnHit(HitComp, OtherActor, OtherComp, NormalImpulse, Hit);
+}
+
+void AProjectile::MulticastOnHit_Implementation(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	ATpsMultiCharacter* MultiChar = Cast<ATpsMultiCharacter>(OtherActor);
+	if (MultiChar)
+	{
+		MultiChar->MulticastHit();
+	//}
+
+	/*if (OtherActor->Implements<UInteractWithCrosshairsInterface>())
+	{*/
+		if (ImpactParticles)
+		{
+			ImpactParticles = MultiChar->GetHitParticleSystem();
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, GetActorTransform());
+		}
+		if (ImpactSound)
+		{
+			UGameplayStatics::SpawnSoundAtLocation(this, ImpactSound, GetActorLocation());
+		}
+	}
+	else
+	{
+		if (ImpactParticles)
+		{
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, GetActorTransform());
+		}
+		if (ImpactSound)
+		{
+			UGameplayStatics::SpawnSoundAtLocation(this, ImpactSound, GetActorLocation());
+		}
+	}
+	if (HasAuthority())
+	{
+		Destroy();
+	}
 }
 
 // Called every frame
 void AProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
-
-void AProjectile::Destroyed()
-{
-	Super::Destroyed();
-
-	if (ImpactParticles)
-	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, GetActorTransform());
-	}
-	if (ImpactSound)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
-	}
-}
-

@@ -39,10 +39,10 @@ protected:
 	void FireButtonPressed(bool bButtonPressed);
 
 	UFUNCTION(Server, Reliable)
-	void ServerFire(const FVector_NetQuantize& TraceTarget);
+	void ServerFire(const FVector_NetQuantize& TraceHitTarget);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastFire(const FVector_NetQuantize& TraceTarget);
+	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
 
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
 

@@ -16,7 +16,7 @@ class MULTIPLAYERSESSIONS_API UMenu : public UUserWidget
 	GENERATED_BODY()
 public:
 	UFUNCTION(BlueprintCallable)
-	void MenuSetup(int32 NumberOfPublicConnections = 4, FString TypeOfMatch = FString(TEXT("CoOpGame")), FString LobbyPath = FString(TEXT("/Game/ThirdPerson/Maps/Lobby")));
+	void MenuSetup(int32 NumberOfPublicConnections = 4, FString TypeOfMatch = FString(TEXT("CoOpGame")), FString LobbyPath = FString(TEXT("/Game/MyContent/Maps/Lobby")));
 protected:
 	virtual bool Initialize() override;
 	virtual void NativeDestruct() override;
